@@ -11,7 +11,7 @@
 struct Material {
     color: vec3<f32>,
     kind: u32,
-    fuzz: f32,
+    fuzz_or_refractive_index: f32,
 }
 
 struct Geometry {
@@ -125,12 +125,12 @@ fn rayColor(ray: Ray, screenPos: vec2<i32>) -> vec3<f32> {
                 temp_ray.direction = metallic_ray_direction(
                     temp_ray.direction,
                     result.normal,
-                    result.material.fuzz,
+                    result.material.fuzz_or_refractive_index,
                     screenPos
                 );
             }
             case 2u: {
-                var refractiveIndex = 1.5;
+                var refractiveIndex = result.material.fuzz_or_refractive_index;
                 if result.frontFace {
                     refractiveIndex = 1.0/refractiveIndex;
                 }

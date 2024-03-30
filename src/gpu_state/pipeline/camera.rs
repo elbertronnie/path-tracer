@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use cgmath::{Vector3, InnerSpace, Rad, Rotation3, Rotation, Angle, Basis3};
+use cgmath::{Angle, Basis3, InnerSpace, Rad, Rotation, Rotation3, Vector3};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Camera {
@@ -10,7 +10,12 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(position: [f32; 3], forwards: [f32; 3], focus_dist: f32, defocus_angle: f32) -> Camera {
+    pub fn new(
+        position: [f32; 3],
+        forwards: [f32; 3],
+        focus_dist: f32,
+        defocus_angle: f32,
+    ) -> Camera {
         Camera {
             position: position.into(),
             forwards: forwards.into(),
@@ -35,11 +40,11 @@ impl Camera {
     }
 
     pub fn forwards(&mut self) {
-        self.position += 0.1*self.forwards;
+        self.position += 0.1 * self.forwards;
     }
 
     pub fn backwards(&mut self) {
-        self.position -= 0.1*self.forwards;
+        self.position -= 0.1 * self.forwards;
     }
 
     pub fn rightwards(&mut self) {
@@ -56,15 +61,13 @@ impl Camera {
 
     pub fn rotate_rightwards(&mut self, speed: f32) {
         let angle: Rad<f32> = Rad::full_turn() * speed;
-        self.forwards = Basis3::from_angle_z(-angle)
-            .rotate_vector(self.forwards);
+        self.forwards = Basis3::from_angle_z(-angle).rotate_vector(self.forwards);
     }
 
     pub fn rotate_upwards(&mut self, speed: f32) {
         let angle: Rad<f32> = Rad::full_turn() * speed;
         let axis = self.forwards.cross(Vector3::unit_z()).normalize();
-        self.forwards = Basis3::from_axis_angle(axis, angle)
-            .rotate_vector(self.forwards);
+        self.forwards = Basis3::from_axis_angle(axis, angle).rotate_vector(self.forwards);
     }
 }
 
@@ -83,23 +86,18 @@ pub struct CameraUniform {
 
 impl Default for Camera {
     fn default() -> Camera {
-        Camera::new(
-            [0.0, 0.0, 0.0],
-            [1.0, 0.0, 0.0],
-            5.0,
-            0.3,
-        )
+        Camera::new([0.0, 0.0, 0.0], [1.0, 0.0, 0.0], 5.0, 0.3)
     }
 }
 
 impl CameraUniform {
     pub const fn new(
-        position: [f32; 3], 
-        forwards: [f32; 3], 
-        right: [f32; 3], 
-        up: [f32; 3], 
-        focus_dist: f32, 
-        defocus_angle: f32
+        position: [f32; 3],
+        forwards: [f32; 3],
+        right: [f32; 3],
+        up: [f32; 3],
+        focus_dist: f32,
+        defocus_angle: f32,
     ) -> CameraUniform {
         CameraUniform {
             position,

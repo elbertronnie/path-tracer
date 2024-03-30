@@ -1,10 +1,6 @@
-use std::mem::size_of;
 use bytemuck::{Pod, Zeroable};
-use wgpu::{
-    VertexBufferLayout, VertexStepMode, BufferAddress, VertexAttribute, 
-    VertexFormat
-};
-
+use std::mem::size_of;
+use wgpu::{BufferAddress, VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Pod, Zeroable)]
@@ -15,7 +11,10 @@ pub struct Vertex {
 
 impl Vertex {
     pub const fn new(position: [f32; 2], tex_coords: [f32; 2]) -> Vertex {
-        Vertex { position, tex_coords }
+        Vertex {
+            position,
+            tex_coords,
+        }
     }
 
     pub fn desc() -> VertexBufferLayout<'static> {
@@ -32,10 +31,8 @@ impl Vertex {
                     offset: size_of::<[f32; 2]>() as BufferAddress,
                     shader_location: 1,
                     format: VertexFormat::Float32x2,
-                }
+                },
             ],
         }
     }
 }
-
-

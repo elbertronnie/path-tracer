@@ -1,11 +1,11 @@
 mod gpu_state;
 
+use gpu_state::GpuState;
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
-use gpu_state::GpuState;
 
 pub async fn run() {
     env_logger::init();
