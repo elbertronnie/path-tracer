@@ -2,11 +2,8 @@
 
 @group(1) @binding(0) var<uniform> camera: Camera;
 @group(1) @binding(1) var<storage, read> objects: Geometries;
-@group(1) @binding(2) var<storage, read> sampleCount: u32;
 
 @group(2) @binding(0) var randomState: texture_storage_2d<r32uint, read_write>;
-
-@group(3) @binding(0) var prevBuffer: texture_storage_2d<rgba8unorm, read>;
 
 struct Material {
     color: vec3<f32>,
@@ -75,11 +72,13 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     var myRay1: Ray;
     myRay1.origin = camera.position;
     myRay1.direction = forwards + horizontalCoefficient*right + verticalCoefficient*up;
-    pixelColor = rayColor(myRay1, screenPos);
     
-    let prevColor = textureLoad(prevBuffer, screenPos).xyz;
-    pixelColor = (f32(sampleCount) * prevColor + pixelColor)/f32(sampleCount + 1u);
-    textureStore(colorBuffer, screenPos, vec4<f32>(pixelColor, 1.0));
+    let samples: u32 = 20u;
+    for(var sample: u32 = 0u; sample < samples; sample++) {
+        pixelColor += rayColor(myRay1, screenPos);
+    }
+    
+    textureStore(colorBuffer, screenPos, vec4<f32>(pixelColor/f32(samples), 1.0));
 }
 
 fn rayColor(ray: Ray, screenPos: vec2<i32>) -> vec3<f32> {
@@ -91,7 +90,7 @@ fn rayColor(ray: Ray, screenPos: vec2<i32>) -> vec3<f32> {
     temp_ray.origin = ray.origin;
     temp_ray.direction = ray.direction;
 
-    let bounces: u32 = 10u;
+    let bounces: u32 = 5u;
     for(var bounce: u32 = 0u; bounce < bounces; bounce++) {
 
         result = trace(temp_ray);

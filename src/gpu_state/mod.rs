@@ -193,10 +193,6 @@ impl GpuState {
             _ => false,
         };
 
-        if event_captured {
-            self.pipeline.reset_sample_count(&self.queue);
-        }
-
         event_captured
     }
 
@@ -216,14 +212,12 @@ impl GpuState {
                 label: Some("Render Encoder"),
             });
 
-        self.pipeline.switch_buffer();
         self.pipeline.render(&mut encoder, &view);
 
         // submit will accept anything that implements IntoIter
         self.queue.submit([encoder.finish()]);
         output.present();
 
-        self.pipeline.increment_sample_count(&self.queue);
         Ok(())
     }
 }
