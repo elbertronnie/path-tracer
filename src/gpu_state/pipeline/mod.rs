@@ -62,81 +62,12 @@ impl Pipeline {
         let gray_lambertian = MaterialStorage::new_lambertian([0.5, 0.5, 0.5]);
         let red_lambertian = MaterialStorage::new_lambertian([1.0, 0.0, 0.0]);
         let green_lambertian = MaterialStorage::new_lambertian([0.0, 1.0, 0.0]);
-        let white_glass = MaterialStorage::new_dielectric([1.0, 1.0, 1.0], 1.5);
-        let white_light = MaterialStorage::new_light([2.0, 2.0, 2.0]);
+        let gray_metallic = MaterialStorage::new_metallic([0.5, 0.5, 0.5], 0.5);
 
         let objects = &[
-            // Light surface
-            GeometryStorage::new_quad(
-                [3.5, -0.5, 1.0],
-                [0.0, 1.0, 0.0],
-                [1.0, 0.0, 0.0],
-                white_light,
-            ),
-            // Glass sphere
-            GeometryStorage::new_sphere([4.0, -0.5, -0.75], 0.25, white_glass),
-            GeometryStorage::new_quad(
-                [4.0, 0.25, -1.0],
-                [0.0, 0.0, 0.75],
-                [0.5, -0.25, 0.0],
-                gray_lambertian,
-            ),
-            // Grey box
-            GeometryStorage::new_quad(
-                [4.0, 0.25, -1.0],
-                [0.0, 0.0, 0.75],
-                [0.25, 0.5, 0.0],
-                gray_lambertian,
-            ),
-            GeometryStorage::new_quad(
-                [4.0, 0.25, -0.25],
-                [0.5, -0.25, 0.0],
-                [0.25, 0.5, 0.0],
-                gray_lambertian,
-            ),
-            GeometryStorage::new_quad(
-                [4.25, 0.75, -1.0],
-                [0.0, 0.0, 0.75],
-                [0.5, -0.25, 0.0],
-                gray_lambertian,
-            ),
-            GeometryStorage::new_quad(
-                [4.5, 0.0, -1.0],
-                [0.0, 0.0, 0.75],
-                [0.25, 0.5, 0.0],
-                gray_lambertian,
-            ),
-            // Enclosing multi-colored box
-            GeometryStorage::new_quad(
-                [3.0, -1.0, -1.0],
-                [2.0, 0.0, 0.0],
-                [0.0, 2.0, 0.0],
-                white_lambertian,
-            ),
-            GeometryStorage::new_quad(
-                [3.0, -1.0, 1.0],
-                [2.0, 0.0, 0.0],
-                [0.0, 2.0, 0.0],
-                white_lambertian,
-            ),
-            GeometryStorage::new_quad(
-                [5.0, -1.0, -1.0],
-                [0.0, 0.0, 2.0],
-                [0.0, 2.0, 0.0],
-                white_lambertian,
-            ),
-            GeometryStorage::new_quad(
-                [3.0, 1.0, -1.0],
-                [2.0, 0.0, 0.0],
-                [0.0, 0.0, 2.0],
-                red_lambertian,
-            ),
-            GeometryStorage::new_quad(
-                [3.0, -1.0, -1.0],
-                [0.0, 0.0, 2.0],
-                [2.0, 0.0, 0.0],
-                green_lambertian,
-            ),
+            GeometryStorage::new_sphere([2.0, -0.5, 0.0], 0.25, gray_metallic),
+            GeometryStorage::new_sphere([2.0, 0.5, 0.0], 0.25, red_lambertian),
+            GeometryStorage::new_sphere([2.0, 0.0, -100.0], 99.75, gray_lambertian),
         ];
 
         let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
