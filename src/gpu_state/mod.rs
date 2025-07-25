@@ -91,8 +91,6 @@ impl GpuState {
 
         let pipeline = Pipeline::new(&device, &config, size);
 
-        pipeline.put_random_texture(&queue);
-
         GpuState {
             surface,
             device,
@@ -132,10 +130,7 @@ impl GpuState {
                         ..
                     },
                 ..
-            } => {
-                self.pipeline.camera().forwards();
-                true
-            }
+            } => true,
             WindowEvent::KeyboardInput {
                 input:
                     KeyboardInput {
@@ -144,10 +139,7 @@ impl GpuState {
                         ..
                     },
                 ..
-            } => {
-                self.pipeline.camera().backwards();
-                true
-            }
+            } => true,
             WindowEvent::KeyboardInput {
                 input:
                     KeyboardInput {
@@ -156,10 +148,7 @@ impl GpuState {
                         ..
                     },
                 ..
-            } => {
-                self.pipeline.camera().rightwards();
-                true
-            }
+            } => true,
             WindowEvent::KeyboardInput {
                 input:
                     KeyboardInput {
@@ -168,10 +157,7 @@ impl GpuState {
                         ..
                     },
                 ..
-            } => {
-                self.pipeline.camera().leftwards();
-                true
-            }
+            } => true,
             WindowEvent::CursorLeft { .. } => {
                 self.prev_cursor = None;
                 true
@@ -181,12 +167,6 @@ impl GpuState {
                 true
             }
             WindowEvent::CursorMoved { position, .. } => {
-                if let Some(s) = self.prev_cursor {
-                    let pct_x = (position.x - s.x) / (self.size.width as f64);
-                    self.pipeline.camera().rotate_rightwards(pct_x as f32);
-                    let pct_y = (position.y - s.y) / (self.size.height as f64);
-                    self.pipeline.camera().rotate_upwards(-pct_y as f32);
-                }
                 self.prev_cursor = Some(*position);
                 true
             }
@@ -197,7 +177,7 @@ impl GpuState {
     }
 
     pub fn update(&mut self) {
-        self.pipeline.update_camera(&self.queue);
+        // Update Camera
     }
 
     pub fn render(&mut self) -> Result<(), SurfaceError> {

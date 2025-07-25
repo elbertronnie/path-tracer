@@ -32,15 +32,7 @@ const NUM_VERTICES: u32 = 6;
 
 pub struct Pipeline {
     size: wgpu::Extent3d,
-    camera: Camera,
-    camera_buffer: Buffer,
-    objects_buffer: Buffer,
     vertex_buffer: Buffer,
-    random_texture: Texture,
-    random_bind_group: BindGroup,
-    camera_bind_group: BindGroup,
-    compute_bind_group: BindGroup,
-    compute_pipeline: ComputePipeline,
     render_bind_group: BindGroup,
     render_pipeline: RenderPipeline,
 }
@@ -51,18 +43,6 @@ impl Pipeline {
         config: &SurfaceConfiguration,
         size: PhysicalSize<u32>,
     ) -> Pipeline {
-        let white_lambertian = MaterialStorage::new_lambertian([1.0, 1.0, 1.0]);
-        let gray_lambertian = MaterialStorage::new_lambertian([0.5, 0.5, 0.5]);
-        let red_lambertian = MaterialStorage::new_lambertian([1.0, 0.0, 0.0]);
-        let green_lambertian = MaterialStorage::new_lambertian([0.0, 1.0, 0.0]);
-        let gray_metallic = MaterialStorage::new_metallic([0.5, 0.5, 0.5], 0.5);
-
-        let objects = &[
-            GeometryStorage::new_sphere([2.0, -0.5, 0.0], 0.25, gray_metallic),
-            GeometryStorage::new_sphere([2.0, 0.5, 0.0], 0.25, red_lambertian),
-            GeometryStorage::new_sphere([2.0, 0.0, -100.0], 99.75, gray_lambertian),
-        ];
-
         let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Camera Buffer"),
             contents: bytemuck::cast_slice(RECTANGLE_VERTICES),
@@ -99,150 +79,9 @@ impl Pipeline {
             ..Default::default()
         });
 
-        let camera = Camera::default();
-
-        let camera_buffer = device.create_buffer_init(&BufferInitDescriptor {
-            label: Some("Camera Buffer Descriptor"),
-            contents: bytemuck::cast_slice(&[camera.into_uniform()]),
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,
-        });
-
-        let objects_buffer = device.create_buffer_init(&BufferInitDescriptor {
-            label: Some("Objects Buffer Descriptor"),
-            contents: bytemuck::cast_slice(objects),
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
-        });
-
-        let random_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Random Texture"),
-            size,
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::R32Uint,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING
-                | wgpu::TextureUsages::STORAGE_BINDING
-                | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
-        });
-
-        let random_view = random_texture.create_view(&wgpu::TextureViewDescriptor::default());
-
         let shader = device.create_shader_module(ShaderModuleDescriptor {
             label: Some("Shader"),
             source: ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
-        });
-
-        let compute_shader = device.create_shader_module(ShaderModuleDescriptor {
-            label: Some("Compute Shader"),
-            source: ShaderSource::Wgsl(include_str!("ray_tracer.wgsl").into()),
-        });
-
-        let compute_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::COMPUTE,
-                    ty: wgpu::BindingType::StorageTexture {
-                        access: wgpu::StorageTextureAccess::WriteOnly,
-                        format: wgpu::TextureFormat::Rgba8Unorm,
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                    },
-                    count: None,
-                }],
-                label: Some("compute_bind_group_layout"),
-            });
-
-        let compute_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &compute_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::TextureView(&view), // CHANGED!
-            }],
-            label: Some("compute_bind_group"),
-        });
-
-        let camera_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::COMPUTE,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStages::COMPUTE,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Storage { read_only: true },
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
-                    },
-                ],
-                label: Some("camera_bind_group_layout"),
-            });
-
-        let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &camera_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: camera_buffer.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: objects_buffer.as_entire_binding(),
-                },
-            ],
-            label: Some("camera_bind_group"),
-        });
-
-        let random_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::COMPUTE,
-                    ty: wgpu::BindingType::StorageTexture {
-                        access: wgpu::StorageTextureAccess::ReadWrite,
-                        format: wgpu::TextureFormat::R32Uint,
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                    },
-                    count: None,
-                }],
-                label: Some("random_bind_group_layout"),
-            });
-
-        let random_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &random_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::TextureView(&random_view), // CHANGED!
-            }],
-            label: Some("random_bind_group"),
-        });
-
-        let compute_pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
-            label: Some("Compute Pipeline Layout"),
-            bind_group_layouts: &[
-                &compute_bind_group_layout,
-                &camera_bind_group_layout,
-                &random_bind_group_layout,
-            ],
-            push_constant_ranges: &[],
-        });
-
-        let compute_pipeline = device.create_compute_pipeline(&ComputePipelineDescriptor {
-            label: Some("Compute Pipeline"),
-            layout: Some(&compute_pipeline_layout),
-            module: &compute_shader,
-            entry_point: "main",
         });
 
         let render_bind_group_layout =
@@ -333,32 +172,13 @@ impl Pipeline {
 
         Pipeline {
             size,
-            camera,
             vertex_buffer,
-            camera_buffer,
-            objects_buffer,
-            random_texture,
-            random_bind_group,
-            camera_bind_group,
-            compute_bind_group,
-            compute_pipeline,
             render_bind_group,
             render_pipeline,
         }
     }
 
     pub fn render<'a>(&'a self, encoder: &mut CommandEncoder, view: &TextureView) {
-        {
-            let mut compute_pass = encoder.begin_compute_pass(&ComputePassDescriptor {
-                label: Some("Compute Pass"),
-            });
-            compute_pass.set_bind_group(0, &self.compute_bind_group, &[]);
-            compute_pass.set_bind_group(1, &self.camera_bind_group, &[]);
-            compute_pass.set_bind_group(2, &self.random_bind_group, &[]);
-            compute_pass.set_pipeline(&self.compute_pipeline);
-            compute_pass.dispatch_workgroups(self.size.width, self.size.height, 1);
-        }
-
         {
             let mut render_pass = encoder.begin_render_pass(&RenderPassDescriptor {
                 label: Some("Render Pass"),
@@ -383,32 +203,5 @@ impl Pipeline {
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.draw(0..NUM_VERTICES, 0..1);
         }
-    }
-
-    pub fn camera(&mut self) -> &mut Camera {
-        &mut self.camera
-    }
-
-    pub fn update_camera(&mut self, queue: &wgpu::Queue) {
-        queue.write_buffer(
-            &self.camera_buffer,
-            0,
-            bytemuck::cast_slice(&[self.camera.into_uniform()]),
-        );
-    }
-
-    pub fn put_random_texture(&self, queue: &wgpu::Queue) {
-        let mut data = vec![0u32; (self.size.width * self.size.height) as usize];
-        thread_rng().fill(&mut data[..]);
-        queue.write_texture(
-            self.random_texture.as_image_copy(),
-            bytemuck::cast_slice(&data[..]),
-            wgpu::ImageDataLayout {
-                offset: 0,
-                bytes_per_row: Some(self.size.width * 4),
-                rows_per_image: Some(self.size.height),
-            },
-            self.size,
-        );
     }
 }
